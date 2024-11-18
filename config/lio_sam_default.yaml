@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     history_policy: "history_keep_last"
-    reliability_policy: "reliability_reliable"
+    reliability_policy: "reliability_best_effort"
 
     # Topics
     pointCloudTopic: "points_raw"               # Point cloud data
@@ -36,8 +36,8 @@
 
     # IMU Settings
     imuType: 0                                  # 0: 6-axis  1: 9-axis
-    imuRate: 500.0
-    imuAccNoise: 3.9939570888238808e-03
+    imuRate: 100.0
+    imuAccNoise: 3.9939570888238808e-03         # g/sqrt(hz) ?? 
     imuGyrNoise: 1.5636343949698187e-03
     imuAccBiasN: 6.4356659353532566e-05
     imuGyrBiasN: 3.5640318696367613e-05

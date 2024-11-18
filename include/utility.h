@@ -159,10 +159,10 @@ public:
     {   
         declare_parameter<string>("history_policy", "history_keep_last");
         get_parameter("history_policy", history_policy);
-        declare_parameter<string>("reliability_policy", "reliability_reliable");
+        declare_parameter<string>("reliability_policy", "reliability_best_effort");
         get_parameter("reliability_policy", reliability_policy);
 
-        declare_parameter<string>("pointCloudTopic", "/points_raw");
+        declare_parameter<string>("pointCloudTopic", "/ouster_points");
         get_parameter("pointCloudTopic", pointCloudTopic);
         declare_parameter<string>("imuTopic", "/imu_correct");
         get_parameter("imuTopic", imuTopic);
