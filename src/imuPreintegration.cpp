@@ -327,6 +327,19 @@ public:
             prevBias_ = gtsam::imuBias::ConstantBias();
             gtsam::PriorFactor<gtsam::imuBias::ConstantBias> priorBias(B(0), prevBias_, priorBiasNoise);
             graphFactors.add(priorBias);
+
+            //debug logging
+            RCLCPP_INFO(
+                get_logger(),
+                "IMU INIT: Accel Bias (x: %f, y: %f, z: %f), Gyro Bias (x: %f, y: %f, z: %f)",
+                prevBias_.accelerometer().x(),
+                prevBias_.accelerometer().y(),
+                prevBias_.accelerometer().z(),
+                prevBias_.gyroscope().x(),
+                prevBias_.gyroscope().y(),
+                prevBias_.gyroscope().z()
+            );
+
             // add values
             graphValues.insert(X(0), prevPose_);
             graphValues.insert(V(0), prevVel_);
@@ -422,6 +435,18 @@ public:
         prevVel_   = result.at<gtsam::Vector3>(V(key));
         prevState_ = gtsam::NavState(prevPose_, prevVel_);
         prevBias_  = result.at<gtsam::imuBias::ConstantBias>(B(key));
+
+            //debug logging
+        RCLCPP_INFO(
+            get_logger(),
+            "IMU INIT OPTI: Accel Bias (x: %f, y: %f, z: %f), Gyro Bias (x: %f, y: %f, z: %f)",
+            prevBias_.accelerometer().x(),
+            prevBias_.accelerometer().y(),
+            prevBias_.accelerometer().z(),
+            prevBias_.gyroscope().x(),
+            prevBias_.gyroscope().y(),
+            prevBias_.gyroscope().z()
+        );
         // Reset the optimization preintegration object.
         imuIntegratorOpt_->resetIntegrationAndSetBias(prevBias_);
         // check optimization

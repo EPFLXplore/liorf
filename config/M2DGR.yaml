@@ -33,7 +33,7 @@
 
     # IMU Settings
     imuType: 0                                  # 0: 6-axis  1: 9-axis
-    imuRate: 100.0
+    imuRate: 500.0
     imuAccNoise: 3.7686306102624571e-02
     imuGyrNoise: 2.3417543020438883e-03
     imuAccBiasN: 1.1416642385952368e-03

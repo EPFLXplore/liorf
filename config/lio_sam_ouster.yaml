@@ -2,7 +2,7 @@
   ros__parameters:
     # Topics
     pointCloudTopic: "ouster_points"               # Point cloud data
-    imuTopic: "ouster_imu"                         # IMU data
+    imuTopic: "ouster_imu_lowpass"                         # IMU data
     odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
     gpsTopic: "odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file
 
@@ -24,28 +24,28 @@
 
     # Sensor Settings
     sensor: ouster                            # lidar sensor type, 'velodyne' or 'ouster' or 'livox' or 'robosense'
-    N_SCAN: 32                                  # number of lidar channel (i.e., Velodyne/Ouster: 16, 32, 64, 128, Livox Horizon: 6)
+    N_SCAN: 16                                  # number of lidar channel (i.e., Velodyne/Ouster: 16, 32, 64, 128, Livox Horizon: 6)
     Horizon_SCAN: 512                         # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
-    downsampleRate: 2                           # default: 1. Downsample your data if too many points(line). i.e., 16 = 64 / 4, 16 = 16 / 1
-    point_filter_num: 5                         # default: 3. Downsample your data if too many points(point). e.g., 16: 1, 32: 5, 64: 8
-    lidarMinRange: 0.1                          # default: 1.0, minimum lidar range to be used
-    lidarMaxRange: 60.0                       # default: 1000.0, maximum lidar range to be used
+    downsampleRate: 1                           # default: 1. Downsample your data if too many points(line). i.e., 16 = 64 / 4, 16 = 16 / 1
+    point_filter_num: 3                         # default: 3. Downsample your data if too many points(point). e.g., 16: 1, 32: 5, 64: 8
+    lidarMinRange: 0.5                          # default: 1.0, minimum lidar range to be used
+    lidarMaxRange: 70.0                       # default: 1000.0, maximum lidar range to be used
 
     # IMU Settings
     imuType: 0                                  # 0: 6-axis  1: 9-axis
     imuRate: 500.0
-    imuAccNoise: 2.0e-03
-    imuGyrNoise: 1.0e-03
-    imuAccBiasN: 5.0e-05
-    imuGyrBiasN: 2.5e-05
-    imuGravity: 9.75
+    imuAccNoise: 9.937769e-03
+    imuGyrNoise: 9.107188e-03
+    imuAccBiasN: 4.968884e-06
+    imuGyrBiasN: 5.535941e-07
+    imuGravity: 9.794418
     imuRPYWeight: 0.01
 
     # Extrinsics: T_lb (lidar -> imu)
     extrinsicTrans: [0.0, 0.0, 0.0]
     extrinsicRot: [1.0, 0.0, 0.0,
-                    0.0, 1.0, 0.0,
-                    0.0, 0.0, 1.0]
+                   0.0, 1.0, 0.0,
+                   0.0, 0.0, 1.0]
 
     # This parameter is set only when the 9-axis IMU is used, but it must be a high-precision IMU. e.g. MTI-680
     extrinsicRPY: [1.0, 0.0, 0.0,
@@ -53,7 +53,7 @@
                     0.0, 0.0, 1.0]
 
     # voxel filter paprams
-    mappingSurfLeafSize: 0.4                      # default: 0.4 - outdoor, 0.2 - indoor
+    mappingSurfLeafSize: 0.2                      # default: 0.4 - outdoor, 0.2 - indoor
 
     # robot motion constraint (in case you are using a 2D robot)
     z_tollerance: 1000.0                            # meters
