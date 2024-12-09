@@ -34,10 +34,10 @@
     # IMU Settings
     imuType: 0                                  # 0: 6-axis  1: 9-axis
     imuRate: 500.0
-    imuAccNoise: 6.5e-02
-    imuGyrNoise: 6.807188e-02        #liorf is very sensitive to this
-    imuAccBiasN: 7.968884e-06
-    imuGyrBiasN: 7.535941e-07
+    imuAccNoise: 8.5e-01
+    imuGyrNoise: 8.807188e-01        #liorf is very sensitive to this
+    imuAccBiasN: 9.968884e-02
+    imuGyrBiasN: 9.535941e-02
     imuGravity: 9.81
     imuRPYWeight: 0.01
 
