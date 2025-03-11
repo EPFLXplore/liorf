@@ -2,40 +2,40 @@
   ros__parameters:
     # Topics
     pointCloudTopic: "ouster_points"               # Point cloud data
-    imuTopic: "ouster_imu_lowpass"                         # IMU data
+    imuTopic: "imu/data_raw"                         # IMU data
     odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
     gpsTopic: "odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file
 
     # Frames
-    lidarFrame: "lidar_sensor_frame"
+    lidarFrame: "lidar_link"
     baselinkFrame: "base_link"
     odometryFrame: "odom"
     mapFrame: "map"
 
     # GPS Settings
-    useImuHeadingInitialization: true           # if using GPS data, set to "true"
+    useImuHeadingInitialization: false           # if using GPS data, set to "true"
     useGpsElevation: false                      # if GPS elevation is bad, set to "false"
     gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
     poseCovThreshold: 25.0                      # m^2, threshold for using GPS data
     
     # Export settings
-    savePCD: false                              # https://github.com/TixiaoShan/LIO-SAM/issues/3
-    savePCDDirectory: "/Downloads/LOAM/"        # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
+    savePCD: true                              # https://github.com/TixiaoShan/LIO-SAM/issues/3
+    savePCDDirectory: "/Documents/ERC_NAV/localization/mapping/"        # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
 
     # Sensor Settings
     sensor: ouster                            # lidar sensor type, 'velodyne' or 'ouster' or 'livox' or 'robosense'
     N_SCAN: 32                                  # number of lidar channel (i.e., Velodyne/Ouster: 16, 32, 64, 128, Livox Horizon: 6)
-    Horizon_SCAN: 512                         # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
+    Horizon_SCAN: 1024                         # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
     downsampleRate: 1                           # default: 1. Downsample your data if too many points(line). i.e., 16 = 64 / 4, 16 = 16 / 1
     point_filter_num: 3                         # default: 3. Downsample your data if too many points(point). e.g., 16: 1, 32: 5, 64: 8
-    lidarMinRange: 0.5                          # default: 1.0, minimum lidar range to be used
-    lidarMaxRange: 70.0                       # default: 1000.0, maximum lidar range to be used
+    lidarMinRange: 0.35                          # default: 1.0, minimum lidar range to be used
+    lidarMaxRange: 45.0                       # default: 1000.0, maximum lidar range to be used
 
     # IMU Settings
     imuType: 0                                  # 0: 6-axis  1: 9-axis
     imuRate: 500.0
     imuAccNoise: 8.5e-01
-    imuGyrNoise: 8.807188e-01        #liorf is very sensitive to this
+    imuGyrNoise: 8.807188e-01        #liorf is very sensitive to this, increase if imu too noisy (if it has been running for more than 2hours)
     imuAccBiasN: 9.968884e-02
     imuGyrBiasN: 9.535941e-02
     imuGravity: 9.81
@@ -53,7 +53,7 @@
                     0.0, 0.0, 1.0]
 
     # voxel filter paprams
-    mappingSurfLeafSize: 0.2                      # default: 0.4 - outdoor, 0.2 - indoor
+    mappingSurfLeafSize: 0.3                      # default: 0.4 - outdoor, 0.2 - indoor
 
     # robot motion constraint (in case you are using a 2D robot)
     z_tollerance: 1000.0                            # meters
