@@ -135,6 +135,18 @@ public:
         laserOdometry.pose.pose.position.x = x;
         laserOdometry.pose.pose.position.y = y;
         laserOdometry.pose.pose.position.z = z;
+
+        // Set diagonal covariances for position (x, y, z)
+        laserOdometry.pose.covariance[0]  = 0.01;   // variance in x
+        laserOdometry.pose.covariance[7]  = 0.01;   // variance in y
+        laserOdometry.pose.covariance[14] = 0.01;   // variance in z
+
+        // Set diagonal covariances for orientation (roll, pitch, yaw)
+        // These indices are 21, 28, and 35 respectively.
+        laserOdometry.pose.covariance[21] = 0.001;  // variance in roll
+        laserOdometry.pose.covariance[28] = 0.001;  // variance in pitch
+        laserOdometry.pose.covariance[35] = 0.001;  // variance in yaw
+
         quat_tf.setRPY(roll, pitch, yaw);
         geometry_msgs::msg::Quaternion quat_msg;
         tf2::convert(quat_tf, quat_msg);

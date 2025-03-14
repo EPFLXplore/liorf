@@ -1677,6 +1677,18 @@ public:
         laserOdometryROS.pose.pose.position.x = transformTobeMapped[3];
         laserOdometryROS.pose.pose.position.y = transformTobeMapped[4];
         laserOdometryROS.pose.pose.position.z = transformTobeMapped[5];
+
+        // Set diagonal covariances for position (x, y, z)
+        laserOdometryROS.pose.covariance[0]  = 0.01;   // variance in x
+        laserOdometryROS.pose.covariance[7]  = 0.01;   // variance in y
+        laserOdometryROS.pose.covariance[14] = 0.01;   // variance in z
+
+        // Set diagonal covariances for orientation (roll, pitch, yaw)
+        // These indices are 21, 28, and 35 respectively.
+        laserOdometryROS.pose.covariance[21] = 0.001;  // variance in roll
+        laserOdometryROS.pose.covariance[28] = 0.001;  // variance in pitch
+        laserOdometryROS.pose.covariance[35] = 0.001;  // variance in yaw
+        
         // Ref: http://wiki.ros.org/tf2/Tutorials/Migration/DataConversions
         tf2::Quaternion quat_tf;
         quat_tf.setRPY(transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]);
@@ -1737,6 +1749,9 @@ public:
             laserOdomIncremental.pose.pose.position.x = x;
             laserOdomIncremental.pose.pose.position.y = y;
             laserOdomIncremental.pose.pose.position.z = z;
+            
+
+
             tf2::Quaternion quat_tf;
             quat_tf.setRPY(roll, pitch, yaw);
             geometry_msgs::msg::Quaternion quat_msg;
