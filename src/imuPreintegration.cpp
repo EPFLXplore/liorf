@@ -504,7 +504,7 @@ public:
     bool failureDetection(const gtsam::Vector3& velCur, const gtsam::imuBias::ConstantBias& biasCur)
     {
         Eigen::Vector3f vel(velCur.x(), velCur.y(), velCur.z());
-        if (vel.norm() > 30)
+        if (vel.norm() > 5)
         {
             RCLCPP_WARN(get_logger(), "Large velocity, reset IMU-preintegration!");
             return true;
@@ -512,7 +512,7 @@ public:
 
         Eigen::Vector3f ba(biasCur.accelerometer().x(), biasCur.accelerometer().y(), biasCur.accelerometer().z());
         Eigen::Vector3f bg(biasCur.gyroscope().x(), biasCur.gyroscope().y(), biasCur.gyroscope().z());
-        if (ba.norm() > 1.0 || bg.norm() > 1.0)
+        if (ba.norm() > 0.8 || bg.norm() > 0.8)
         {
             RCLCPP_WARN(get_logger(), "Large bias, reset IMU-preintegration!");
             return true;
