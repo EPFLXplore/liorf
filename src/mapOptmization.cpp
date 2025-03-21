@@ -1685,9 +1685,9 @@ public:
 
         // Set diagonal covariances for orientation (roll, pitch, yaw)
         // These indices are 21, 28, and 35 respectively.
-        laserOdometryROS.pose.covariance[21] = 0.001;  // variance in roll
-        laserOdometryROS.pose.covariance[28] = 0.001;  // variance in pitch
-        laserOdometryROS.pose.covariance[35] = 0.001;  // variance in yaw
+        laserOdometryROS.pose.covariance[21] = 0.01;  // variance in roll
+        laserOdometryROS.pose.covariance[28] = 0.01;  // variance in pitch
+        laserOdometryROS.pose.covariance[35] = 0.01;  // variance in yaw
         
         // Ref: http://wiki.ros.org/tf2/Tutorials/Migration/DataConversions
         tf2::Quaternion quat_tf;
