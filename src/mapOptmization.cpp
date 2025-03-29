@@ -1,6 +1,8 @@
 #include "utility.h"
 #include "liorf/msg/cloud_info.hpp"
 #include "liorf/srv/save_map.hpp"
+#include "std_msgs/msg/bool.hpp"
+
 // <!-- liorf_yjz_lucky_boy -->
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <gtsam/geometry/Rot3.h>
@@ -74,6 +76,10 @@ public:
     rclcpp::Subscription<liorf::msg::CloudInfo>::SharedPtr subCloud;
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr subGPS;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subLoop;
+
+    //custom reset publishers and subscribers
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pubReset_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subReset_;
 
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudSurround;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubLaserOdometryGlobal;
@@ -173,6 +179,19 @@ public:
                     std::bind(&mapOptimization::gpsHandler, this, std::placeholders::_1));
         subLoop = create_subscription<std_msgs::msg::Float64MultiArray>("lio_loop/loop_closure_detection", QosPolicy(history_policy, reliability_policy),
                     std::bind(&mapOptimization::loopInfoHandler, this, std::placeholders::_1));
+
+        // Create a publisher for the reset topic:
+        pubReset_ = this->create_publisher<std_msgs::msg::Bool>("liorf/reset", QosPolicy(history_policy, reliability_policy));
+
+        // Create a subscriber to the reset topic:
+        subReset_ = this->create_subscription<std_msgs::msg::Bool>(
+            "liorf/reset", QosPolicy(history_policy, reliability_policy),
+            [this](const std_msgs::msg::Bool::SharedPtr msg) {
+            if (msg->data) {
+                RCLCPP_WARN(get_logger(), "Received global reset message. Resetting mapOptimization state.");
+                //resetEverything();
+            }
+            });
 
         pubKeyPoses = create_publisher<sensor_msgs::msg::PointCloud2>("liorf/mapping/trajectory", QosPolicy(history_policy, reliability_policy));
         pubLaserCloudSurround = create_publisher<sensor_msgs::msg::PointCloud2>("liorf/mapping/map_global", QosPolicy(history_policy, reliability_policy));
@@ -275,6 +294,57 @@ public:
             publishFrames();
         }
     }
+
+    //////////////////////// custom reset if not enough features
+    // Add this new member function in the mapOptimization class:
+    void resetEverything()
+    {
+        RCLCPP_WARN(get_logger(), "Low-feature condition persisted: resetting map optimization state completely.");
+  
+        // Clear key poses and keyframe containers.
+        cloudKeyPoses3D->clear();
+        cloudKeyPoses6D->clear();
+        surfCloudKeyFrames.clear();
+        globalPath.poses.clear();
+      
+        // Clear mapping containers that reference old keys.
+        laserCloudSurfFromMap->clear();
+        laserCloudSurfFromMapDS->clear();
+        
+        // Clear loop closure containers.
+        loopIndexContainer.clear();
+        loopIndexQueue.clear();
+        loopPoseQueue.clear();
+        loopNoiseQueue.clear();
+        loopInfoVec.clear();
+      
+        // Reset the transformation using IMU initial values.
+        transformTobeMapped[0] = cloudInfo.imurollinit;
+        transformTobeMapped[1] = cloudInfo.imupitchinit;
+        transformTobeMapped[2] = cloudInfo.imuyawinit;
+        transformTobeMapped[3] = 0.0;
+        transformTobeMapped[4] = 0.0;
+        transformTobeMapped[5] = 0.0;
+      
+        // Reinitialize the optimizer.
+        if (isam != nullptr)
+        {
+          delete isam;
+          isam = nullptr;
+        }
+        ISAM2Params parameters;
+        parameters.relinearizeThreshold = 0.1;
+        parameters.relinearizeSkip = 1;
+        isam = new ISAM2(parameters);
+        
+        // Clear the factor graph and initial estimates.
+        gtSAMgraph.resize(0);
+        initialEstimate.clear();
+      
+        // (Optionally, also reset any static counters if you use them.)
+    }
+
+    //////////////////////// end of custom reset if not enough features
 
     void gpsHandler(const sensor_msgs::msg::NavSatFix::SharedPtr gpsMsg)
     {
@@ -1304,8 +1374,11 @@ public:
         if (cloudKeyPoses3D->points.empty())
             return;
 
+        static int lowFeatureCounter = 0;
+
         if (laserCloudSurfLastDSNum > 30)
         {
+            lowFeatureCounter = 0;
             kdtreeSurfFromMap->setInputCloud(laserCloudSurfFromMapDS);
 
             for (int iterCount = 0; iterCount < 30; iterCount++)
@@ -1323,7 +1396,19 @@ public:
 
             transformUpdate();
         } else {
-            RCLCPP_WARN(get_logger(), "Not enough features! Only %d planar features available.", laserCloudSurfLastDSNum);
+            lowFeatureCounter++;
+            RCLCPP_WARN(get_logger(), "Not enough features! Only %d planar features available. Consecutive low-feature scans: %d",
+                        laserCloudSurfLastDSNum, lowFeatureCounter);
+            const int lowFeatureScanThreshold = 5;  // Tune as needed.
+            if (lowFeatureCounter >= lowFeatureScanThreshold)
+            {
+                RCLCPP_WARN(get_logger(), "Low-feature condition persisted for %d scans. Resetting mapping state.", lowFeatureCounter);
+                std_msgs::msg::Bool resetMsg;
+                resetMsg.data = true;
+                pubReset_->publish(resetMsg);
+                resetEverything();
+                lowFeatureCounter = 0;
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 #include "utility.h"
 #include "liorf/msg/cloud_info.hpp"
+#include "std_msgs/msg/bool.hpp"
+
 // <!-- liorf_localization_yjz_lucky_boy -->
 struct VelodynePointXYZIRT
 {
@@ -75,6 +77,10 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubExtractedCloud;
     rclcpp::Publisher<liorf::msg::CloudInfo>::SharedPtr pubLaserCloudInfo;
 
+    //custom reset publishers and subscribers
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pubReset_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subReset_;
+
     std::deque<sensor_msgs::msg::Imu> imuQueue;
     std::deque<nav_msgs::msg::Odometry> odomQueue;
 
@@ -123,6 +129,16 @@ public:
         pubExtractedCloud = create_publisher<sensor_msgs::msg::PointCloud2>( "liorf/deskew/cloud_deskewed", QosPolicy(history_policy, reliability_policy));
 
         pubLaserCloudInfo = create_publisher<liorf::msg::CloudInfo>("liorf/deskew/cloud_info", QosPolicy(history_policy, reliability_policy));
+
+        pubReset_ = this->create_publisher<std_msgs::msg::Bool>("liorf/reset", QosPolicy(history_policy, reliability_policy));
+        subReset_ = this->create_subscription<std_msgs::msg::Bool>(
+          "liorf/reset", QosPolicy(history_policy, reliability_policy),
+          [this](const std_msgs::msg::Bool::SharedPtr msg) {
+            if (msg->data) {
+              RCLCPP_WARN(get_logger(), "Received global reset message. Resetting ImageProjection state.");
+              //resetParameters();  // or call a dedicated reset function if desired.
+            }
+          });
 
         allocateMemory();
         resetParameters();
@@ -186,6 +202,23 @@ public:
         // cout << "roll: " << imuRoll << ", pitch: " << imuPitch << ", yaw: " << imuYaw << endl << endl;
     }
 
+    void resetImageProjectionState()
+    {
+        RCLCPP_WARN(get_logger(), "Resetting ImageProjection state.");
+        // Clear any queued data:
+        imuQueue.clear();
+        odomQueue.clear();
+        cloudQueue.clear();
+        // Reset any internal pointers and flags:
+        imuPointerCur = 0;
+        firstPointFlag = true;
+        // Clear the point clouds
+        laserCloudIn->clear();
+        fullCloud->clear();
+    }
+    
+
+
     void odometryHandler(const nav_msgs::msg::Odometry::SharedPtr odometryMsg)
     {
         std::lock_guard<std::mutex> lock2(odoLock);
@@ -198,7 +231,15 @@ public:
             return;
 
         if (!deskewInfo())
+        {
+            RCLCPP_WARN(get_logger(), "Not enough deskew data. Publishing reset message from ImageProjection.");
+            std_msgs::msg::Bool resetMsg;
+            resetMsg.data = true;
+            pubReset_->publish(resetMsg);
+            // Optionally, also call resetParameters() to clear internal buffers.
+            resetParameters();
             return;
+        }
 
         projectPointCloud();
 

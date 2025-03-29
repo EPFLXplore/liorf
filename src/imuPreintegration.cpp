@@ -1,4 +1,5 @@
 #include "utility.h"
+#include "std_msgs/msg/bool.hpp"
 
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Pose3.h>
@@ -200,6 +201,10 @@ public:
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubImuOdometry;
 
+    //custom reset publisher subscribers
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr pubReset_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subReset_;
+
     bool systemInitialized = false;
 
     gtsam::noiseModel::Diagonal::shared_ptr priorPoseNoise;
@@ -267,6 +272,18 @@ public:
         
         imuIntegratorImu_ = new gtsam::PreintegratedImuMeasurements(p, prior_imu_bias); // setting up the IMU integration for IMU message thread
         imuIntegratorOpt_ = new gtsam::PreintegratedImuMeasurements(p, prior_imu_bias); // setting up the IMU integration for optimization        
+    
+        pubReset_ = this->create_publisher<std_msgs::msg::Bool>("liorf/reset", QosPolicy(history_policy, reliability_policy));
+
+        // Create a subscriber to the same reset topic. When a reset message is received, call resetLiorfCompletely().
+        subReset_ = this->create_subscription<std_msgs::msg::Bool>(
+            "liorf/reset", QosPolicy(history_policy, reliability_policy),
+            [this](const std_msgs::msg::Bool::SharedPtr msg) {
+            if (msg->data) {
+                RCLCPP_WARN(get_logger(), "Received global reset message. Resetting IMUPreintegration state.");
+                //resetLiorfCompletely();
+            }
+            });
     }
 
     void resetOptimization()
@@ -289,6 +306,21 @@ public:
         doneFirstOpt = false;
         systemInitialized = false;
     }
+
+    // New function to completely reset the state of LIORF.
+    void resetLiorfCompletely()
+    {
+      RCLCPP_WARN(get_logger(), "Resetting LIORF (IMUPreintegration) completely.");
+      imuQueOpt.clear();
+      imuQueImu.clear();
+      resetParams();       // sets lastImuT_imu = -1, doneFirstOpt = false, systemInitialized = false, key = 1, etc.
+      resetOptimization(); // Clears factor graph and reinitializes the optimizer.
+      gtsam::imuBias::ConstantBias lowBias(Eigen::Vector3d(0.001,0.001,0.001), Eigen::Vector3d(0.001,0.001,0.001)); // Example low bias
+      imuIntegratorImu_->resetIntegrationAndSetBias(lowBias);
+      imuIntegratorOpt_->resetIntegrationAndSetBias(lowBias);
+      systemInitialized = false;
+    }
+    
 
     void odometryHandler(const nav_msgs::msg::Odometry::SharedPtr odomMsg)
     {
@@ -357,9 +389,16 @@ public:
             graphValues.insert(V(0), prevVel_);
             graphValues.insert(B(0), prevBias_);
             // optimize once
-            optimizer.update(graphFactors, graphValues);
-            graphFactors.resize(0);
-            graphValues.clear();
+            try {
+                optimizer.update(graphFactors, graphValues);
+                graphFactors.resize(0);
+                graphValues.clear();
+            }
+            catch (const gtsam::IndeterminantLinearSystemException &ex) {
+                RCLCPP_WARN(get_logger(), "Initialization failed due to underconstrained system: %s", ex.what());
+                resetLiorfCompletely();
+                return;
+            }
 
             imuIntegratorImu_->resetIntegrationAndSetBias(prevBias_);
             imuIntegratorOpt_->resetIntegrationAndSetBias(prevBias_);
@@ -437,34 +476,61 @@ public:
         graphValues.insert(V(key), propState_.v());
         graphValues.insert(B(key), prevBias_);
         // optimize
-        optimizer.update(graphFactors, graphValues);
-        optimizer.update();
-        graphFactors.resize(0);
-        graphValues.clear();
-        // Overwrite the beginning of the preintegration for the next step.
-        gtsam::Values result = optimizer.calculateEstimate();
-        prevPose_  = result.at<gtsam::Pose3>(X(key));
-        prevVel_   = result.at<gtsam::Vector3>(V(key));
-        prevState_ = gtsam::NavState(prevPose_, prevVel_);
-        prevBias_  = result.at<gtsam::imuBias::ConstantBias>(B(key));
+        // optimizer.update(graphFactors, graphValues);
+        // optimizer.update();
+        // graphFactors.resize(0);
+        // graphValues.clear();
+        // // Overwrite the beginning of the preintegration for the next step.
+        // gtsam::Values result = optimizer.calculateEstimate();
+        // prevPose_  = result.at<gtsam::Pose3>(X(key));
+        // prevVel_   = result.at<gtsam::Vector3>(V(key));
+        // prevState_ = gtsam::NavState(prevPose_, prevVel_);
+        // prevBias_  = result.at<gtsam::imuBias::ConstantBias>(B(key));
 
-            //debug logging
-        // RCLCPP_INFO(
-        //     get_logger(),
-        //     "IMU INIT OPTI: Accel Bias (x: %f, y: %f, z: %f), Gyro Bias (x: %f, y: %f, z: %f)",
-        //     prevBias_.accelerometer().x(),
-        //     prevBias_.accelerometer().y(),
-        //     prevBias_.accelerometer().z(),
-        //     prevBias_.gyroscope().x(),
-        //     prevBias_.gyroscope().y(),
-        //     prevBias_.gyroscope().z()
-        // );
-        // Reset the optimization preintegration object.
-        imuIntegratorOpt_->resetIntegrationAndSetBias(prevBias_);
+        //     //debug logging
+        // // RCLCPP_INFO(
+        // //     get_logger(),
+        // //     "IMU INIT OPTI: Accel Bias (x: %f, y: %f, z: %f), Gyro Bias (x: %f, y: %f, z: %f)",
+        // //     prevBias_.accelerometer().x(),
+        // //     prevBias_.accelerometer().y(),
+        // //     prevBias_.accelerometer().z(),
+        // //     prevBias_.gyroscope().x(),
+        // //     prevBias_.gyroscope().y(),
+        // //     prevBias_.gyroscope().z()
+        // // );
+        // // Reset the optimization preintegration object.
+        // imuIntegratorOpt_->resetIntegrationAndSetBias(prevBias_);
         // check optimization
+
+        try {
+            optimizer.update(graphFactors, graphValues);
+            optimizer.update();
+            graphFactors.resize(0);
+            graphValues.clear();
+            gtsam::Values result = optimizer.calculateEstimate();
+            prevPose_  = result.at<gtsam::Pose3>(X(key));
+            prevVel_   = result.at<gtsam::Vector3>(V(key));
+            prevState_ = gtsam::NavState(prevPose_, prevVel_);
+            prevBias_  = result.at<gtsam::imuBias::ConstantBias>(B(key));
+            imuIntegratorOpt_->resetIntegrationAndSetBias(prevBias_);
+        }
+        catch (const gtsam::IndeterminantLinearSystemException &ex) {
+            RCLCPP_WARN(get_logger(), "Indeterminant linear system detected: %s. Resetting LIORF completely.", ex.what());
+            std_msgs::msg::Bool resetMsg;
+            resetMsg.data = true;
+            pubReset_->publish(resetMsg);
+            resetLiorfCompletely();
+            return;
+        }
+        
+
         if (failureDetection(prevVel_, prevBias_))
         {
-            resetParams();
+            RCLCPP_WARN(get_logger(), "Large bias/velocity detected. Resetting IMUPreintegration.");
+            std_msgs::msg::Bool resetMsg;
+            resetMsg.data = true;
+            pubReset_->publish(resetMsg);
+            resetLiorfCompletely();
             return;
         }
 

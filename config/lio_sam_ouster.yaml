@@ -27,19 +27,25 @@
     N_SCAN: 32                                  # number of lidar channel (i.e., Velodyne/Ouster: 16, 32, 64, 128, Livox Horizon: 6)
     Horizon_SCAN: 2048                         # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
     downsampleRate: 1                           # default: 1. Downsample your data if too many points(line). i.e., 16 = 64 / 4, 16 = 16 / 1
-    point_filter_num: 3                         # default: 3. Downsample your data if too many points(point). e.g., 16: 1, 32: 5, 64: 8
-    lidarMinRange: 0.35                          # default: 1.0, minimum lidar range to be used
-    lidarMaxRange: 65.0                       # default: 1000.0, maximum lidar range to be used
+    point_filter_num: 1                         # default: 3. Downsample your data if too many points(point). e.g., 16: 1, 32: 5, 64: 8
+    lidarMinRange: 0.0                          # default: 1.0, minimum lidar range to be used
+    lidarMaxRange: 45.0                       # default: 1000.0, maximum lidar range to be used
+
+    # custom Feature extraction settings
+    featureCountThreshold: 100  # minimum number of features to consider the scan as valid
+    lowFeatureScanCountThreshold: 5  # number of consecutive low-feature scans before restart
+
+
 
     # IMU Settings
-    imuType: 0                                  # 0: 6-axis  1: 9-axis
+    imuType: 1                                  # 0: 6-axis  1: 9-axis
     imuRate: 100.0
-    imuAccNoise: 2.0e-02             #was previously 10^-2
-    imuGyrNoise: 8.807188e-01        #liorf is very sensitive to this, increase if imu too noisy (if it has been running for more than 2hours)
-    imuAccBiasN: 9.968884e-03        #previously 10^-2
-    imuGyrBiasN: 9.535941e-02
+    imuAccNoise: 0.01           #was previously 10^-2
+    imuGyrNoise: 0.015        #liorf is very sensitive to this, increase if imu too noisy (if it has been running for more than 2hours)
+    imuAccBiasN: 0.01        #previously 10^-2
+    imuGyrBiasN: 0.01
     imuGravity: 9.81
-    imuRPYWeight: 0.001  #previosuly 0.01
+    imuRPYWeight: 0.5  #previosuly 0.01
 
     # Extrinsics: T_lb (lidar -> imu)
     extrinsicTrans: [0.0, 0.0, 0.0]
