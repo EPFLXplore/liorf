@@ -13,14 +13,14 @@
     mapFrame: "map"
 
     # GPS Settings
-    useImuHeadingInitialization: false           # if using GPS data, set to "true"
+    useImuHeadingInitialization: false          # if using GPS data, set to "true"
     useGpsElevation: false                      # if GPS elevation is bad, set to "false"
     gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
     poseCovThreshold: 25.0                      # m^2, threshold for using GPS data
     
     # Export settings
     savePCD: true                              # https://github.com/TixiaoShan/LIO-SAM/issues/3
-    savePCDDirectory: "/Documents/ERC_NAV/localization/mapping/"        # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
+    savePCDDirectory: "/dev_ws/src/localization/mapping/liorf_maps/"        # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
 
     # Sensor Settings
     sensor: ouster                            # lidar sensor type, 'velodyne' or 'ouster' or 'livox' or 'robosense'
@@ -28,8 +28,8 @@
     Horizon_SCAN: 2048                         # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
     downsampleRate: 1                           # default: 1. Downsample your data if too many points(line). i.e., 16 = 64 / 4, 16 = 16 / 1
     point_filter_num: 1                         # default: 3. Downsample your data if too many points(point). e.g., 16: 1, 32: 5, 64: 8
-    lidarMinRange: 0.0                          # default: 1.0, minimum lidar range to be used
-    lidarMaxRange: 45.0                       # default: 1000.0, maximum lidar range to be used
+    lidarMinRange: 1.0                          # default: 1.0, minimum lidar range to be used
+    lidarMaxRange: 60.0                       # default: 1000.0, maximum lidar range to be used
 
     # custom Feature extraction settings
     featureCountThreshold: 100  # minimum number of features to consider the scan as valid
