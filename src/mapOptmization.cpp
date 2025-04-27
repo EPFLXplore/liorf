@@ -188,7 +188,7 @@ public:
             "liorf/reset", QosPolicy(history_policy, reliability_policy),
             [this](const std_msgs::msg::Bool::SharedPtr msg) {
             if (msg->data) {
-                RCLCPP_WARN(get_logger(), "Received global reset message. Resetting mapOptimization state.");
+                //RCLCPP_WARN(get_logger(), "Received global reset message. Resetting mapOptimization state.");
                 //resetEverything();
             }
             });

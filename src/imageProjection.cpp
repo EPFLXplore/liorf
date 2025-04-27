@@ -135,7 +135,7 @@ public:
           "liorf/reset", QosPolicy(history_policy, reliability_policy),
           [this](const std_msgs::msg::Bool::SharedPtr msg) {
             if (msg->data) {
-              RCLCPP_WARN(get_logger(), "Received global reset message. Resetting ImageProjection state.");
+              //RCLCPP_WARN(get_logger(), "Received global reset message. Resetting ImageProjection state.");
               //resetParameters();  // or call a dedicated reset function if desired.
             }
           });
@@ -232,7 +232,7 @@ public:
 
         if (!deskewInfo())
         {
-            RCLCPP_WARN(get_logger(), "Not enough deskew data. Publishing reset message from ImageProjection.");
+            //RCLCPP_WARN(get_logger(), "Not enough deskew data. Publishing reset message from ImageProjection.");
             std_msgs::msg::Bool resetMsg;
             resetMsg.data = true;
             pubReset_->publish(resetMsg);
